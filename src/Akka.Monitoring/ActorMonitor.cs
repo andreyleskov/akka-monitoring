@@ -27,16 +27,16 @@ namespace Akka.Monitoring
         /// <summary>
         /// Register a new <see cref="AbstractActorMonitoringClient"/> instance to use when monitoring Actor operations.
         /// </summary>
-        /// <returns>true if the monitor was succeessfully registered, false otherwise.</returns>
+        /// <returns>true if the monitor was successfully registered, false otherwise.</returns>
         public bool RegisterMonitor(AbstractActorMonitoringClient client)
         {
             return Registry.AddMonitor(client);
         }
 
         /// <summary>
-        /// Deregister an existing <see cref="AbstractActorMonitoringClient"/> instance so it no longer reports metrics to existing Actors.
+        /// De-register an existing <see cref="AbstractActorMonitoringClient"/> instance so it no longer reports metrics to existing Actors.
         /// </summary>
-        /// <returns>true if the monitor was succeessfully deregistered, false otherwise.</returns>
+        /// <returns>true if the monitor was successfully de-registered, false otherwise.</returns>
         public bool DeregisterMonitor(AbstractActorMonitoringClient client)
         {
             return Registry.RemoveMonitor(client);
@@ -60,17 +60,39 @@ namespace Akka.Monitoring
         }
 
         /// <summary>
+        /// Increment given counter.
+        /// </summary>
+        /// <param name="defaulCounterName"></param>
+        /// <param name="context"></param>
+        /// <param name="value"></param>
+        /// <param name="sampleRate"></param>
+        /// <param name="actorGroup"></param>
+        private void IncrementCounter(string defaulCounterName,
+                                      IActorContext context = null,
+                                      int value = 1,
+                                      double? sampleRate = null,
+                                      string actorGroup = null)
+        {
+            var counterActorGroup = actorGroup ??
+                                (context == null ? defaulCounterName : CounterNames.ActorSpecificCategory(context, defaulCounterName));
+
+            var counterSampleRate = sampleRate ?? GlobalSampleRate;
+
+            Registry.UpdateCounter(counterActorGroup, value, counterSampleRate);
+        }
+
+        /// <summary>
         /// Increment the "Actor Restarts" counter
         /// </summary>
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementActorRestart(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementActorRestart(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.ActorRestarts, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.ActorRestarts), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.ActorRestarts, context, value, sampleRate, actorGroup);
         }
+
 
         /// <summary>
         /// Increment the "Actors Created" counter
@@ -78,11 +100,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementActorCreated(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementActorCreated(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.ActorsCreated, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.ActorsCreated), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.ActorsCreated, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -91,11 +112,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementActorStopped(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementActorStopped(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.ActorsStopped, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.ActorsStopped), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.ActorsStopped, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -104,11 +124,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementMessagesReceived(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementMessagesReceived(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.ReceivedMessages, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.ReceivedMessages), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.ReceivedMessages, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -117,11 +136,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementUnhandledMessage(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementUnhandledMessage(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.UnhandledMessages, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.UnhandledMessages), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.UnhandledMessages, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -130,11 +148,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementDeadLetters(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementDeadLetters(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.DeadLetters, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.DeadLetters), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.DeadLetters, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -143,11 +160,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementErrorsLogged(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementErrorsLogged(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.ErrorMessages, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.ErrorMessages), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.ErrorMessages, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -156,11 +172,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementWarningsLogged(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementWarningsLogged(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.WarningMessages, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.WarningMessages), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.WarningMessages, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -169,11 +184,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementDebugsLogged(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementDebugsLogged(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.DebugMessages, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.DebugMessages), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.DebugMessages, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -182,11 +196,10 @@ namespace Akka.Monitoring
         /// <param name="context">The context of the actor making this call</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        public void IncrementInfosLogged(IActorContext context = null, int value = 1, double? sampleRate = null)
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
+        public void IncrementInfosLogged(IActorContext context = null, int value = 1, double? sampleRate = null, string actorGroup = null)
         {
-            Registry.UpdateCounter(CounterNames.InfoMessages, value, sampleRate ?? GlobalSampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, CounterNames.InfoMessages), value, sampleRate ?? GlobalSampleRate);
+            IncrementCounter(CounterNames.InfoMessages, context, value, sampleRate, actorGroup);
         }
 
         /// <summary>
@@ -195,12 +208,10 @@ namespace Akka.Monitoring
         /// <param name="metricName">The name of the counter as it will appear in your monitoring system</param>
         /// <param name="value">The value of the counter. 1 by default.</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
-        /// /// <param name="context">The context of the actor making this call</param>
+        /// <param name="context">The context of the actor making this call</param>
         public void IncrementCounter(string metricName, int value = 1, double sampleRate = 1, IActorContext context = null)
         {
-            Registry.UpdateCounter(metricName, value, sampleRate);
-            if (context != null)
-                Registry.UpdateCounter(CounterNames.ActorSpecificCategory(context, metricName), value, sampleRate);
+            IncrementCounter(metricName, context, value, sampleRate);
         }
 
         /// <summary>
@@ -210,11 +221,11 @@ namespace Akka.Monitoring
         /// <param name="time">The amount of time that elapsed, in milliseconds</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
         /// <param name="context">The context of the actor making this call</param>
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
         public void Timing(string metricName, long time, double sampleRate = 1, IActorContext context = null)
         {
-            Registry.UpdateTimer(metricName, time, sampleRate);
-            if (context != null)
-                Registry.UpdateTimer(CounterNames.ActorSpecificCategory(context, metricName), time, sampleRate);
+            var finalMetricName = context == null ? metricName : CounterNames.ActorSpecificCategory(context, metricName);
+            Registry.UpdateTimer(finalMetricName, time, sampleRate);
         }
 
         /// <summary>
@@ -224,11 +235,11 @@ namespace Akka.Monitoring
         /// <param name="value">The value of the gauge</param>
         /// <param name="sampleRate">The sample rate. 100% by default.</param>
         /// <param name="context">The context of the actor making this call</param>
+        /// <param name="actorGroup">The name of actor group to show in counter. Actor type name by default</param>
         public void Gauge(string metricName, int value = 1, double sampleRate = 1, IActorContext context = null)
         {
-            Registry.UpdateGauge(metricName, value, sampleRate);
-            if (context != null)
-                Registry.UpdateGauge(CounterNames.ActorSpecificCategory(context, metricName), value, sampleRate);
+            var finalMetricName = (context == null ? metricName : CounterNames.ActorSpecificCategory(context, metricName));
+            Registry.UpdateGauge(finalMetricName, value, sampleRate);
         }
     }
 
